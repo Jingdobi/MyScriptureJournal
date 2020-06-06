@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.EntityFrameworkCore;
 using MyScriptureJournal.Data;
 using RazorPagesScripture.Models;
@@ -34,44 +35,52 @@ namespace MyScriptureJournal.Pages.Scriptures
 
         public string BookSort { get; set; }
 
- /*       public async Task OnGetAsync(string sortOrder)
-        {
-           
-        }*/
+            /*   public async Task OnGetAsync(string sortOrder)
+               {
+                               
+               
+                   Scripture = await dateIQ.AsNoTracking().ToListAsync();
+               }*/
         public async Task OnGetAsync(string sortOrder)
         {
             IQueryable<string> bookQuery = from m in _context.Scripture
                                             orderby m.Book
                                             select m.Book;
 
-            var notes = from m in _context.Scripture
-                         select m;
-            if (!string.IsNullOrEmpty(SearchString))
-            {
-                notes = notes.Where(s => s.Notes.Contains(SearchString));
-            }
-            if(!string.IsNullOrEmpty(ScriptureBook))
-            {
-                notes = notes.Where(x => x.Book == ScriptureBook);
-            }
-            Books = new SelectList(await bookQuery.Distinct().ToListAsync());
-            Scripture = await notes.ToListAsync();
-
-             BookSort = String.IsNullOrEmpty(sortOrder) ? "book_desc" : "";
+            BookSort = String.IsNullOrEmpty(sortOrder) ? "book_desc" : "";
             DateSort = sortOrder == "Date" ? "date_desc" : "Date";
 
-            IQueryable<Scripture> dateIQ = from d in _context.Scripture
-                                           select d;
-            switch (sortOrder)
+            if (!String.IsNullOrEmpty(sortOrder))
             {
-                case "book_desc":
-                    dateIQ = dateIQ.OrderByDescending(d => d.Book);
-                    break;
-                case "date_desc":
-                    dateIQ = dateIQ.OrderByDescending(d => d.AddDate);
-                    break;
+                IQueryable<Scripture> dateIQ = from d in _context.Scripture
+                                               select d;
+                switch (sortOrder)
+                {
+                    case "book_desc":
+                        dateIQ = dateIQ.OrderByDescending(d => d.Book);
+                        break;
+                    case "date_desc":
+                        dateIQ = dateIQ.OrderByDescending(d => d.AddDate);
+                        break;
+                }
+                Scripture = await dateIQ.ToListAsync();
             }
-            Scripture = await dateIQ.AsNoTracking().ToListAsync();
+            else
+            {
+                var notes = from m in _context.Scripture
+                            select m;
+                if (!string.IsNullOrEmpty(SearchString))
+                {
+                    notes = notes.Where(s => s.Notes.Contains(SearchString));
+                }
+                if (!string.IsNullOrEmpty(ScriptureBook))
+                {
+                    notes = notes.Where(x => x.Book == ScriptureBook);
+                }
+                Books = new SelectList(await bookQuery.Distinct().ToListAsync());
+                Scripture = await notes.ToListAsync();
+            }
+
         }
     }
 }
